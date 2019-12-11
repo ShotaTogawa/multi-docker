@@ -1,0 +1,24 @@
+sudo: required
+language: node_js
+services:
+  - docker
+
+before_install:
+  - docker build -t togasho/react-test - f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true togasho/react-test npm test
+
+after_success:
+  - docker build -t togasho/multi-client ./client
+  - docker build -t togasho/multi-nginx ./nginx
+  - docker build -t togasho/multi-server ./server
+  - docker build -t togasho/multi-worker ./worker
+  # docker login が必要
+  # travisにDockerIdとDocker_PASSWORDを環境変数を設定する
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # take those images and push dockerhub
+  - docker push togasho/multu-client
+  - docker push togasho/multu-nginx
+  - docker push togasho/multu-server
+  - docker push togasho/multu-worker
